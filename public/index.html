@@ -5,37 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pogadaj24 — Prototype</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
 <style>
-/* ---- CSS ---- */
-body {
-  margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: #111;
-  color: #fff;
-}
-.container { max-width: 1200px; margin: auto; padding: 10px; }
-.app-header { text-align: center; padding: 20px; font-size: 2em; font-weight: 700; }
-.card { background: #222; border-radius: 12px; padding: 15px; margin: 10px 0; }
-.btn { padding: 8px 16px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; }
-.neon { background: #0ff; color: #000; font-weight: 600; }
-.ghost { background: transparent; border: 2px solid #0ff; color: #0ff; }
-.video-stage { position: relative; width: 100%; height: 300px; background: #000; }
-.local-thumb { position: absolute; bottom: 10px; right: 10px; width: 120px; height: 90px; }
-.local-thumb video { width: 100%; height: 100%; object-fit: cover; }
-.chat-box { height: 300px; overflow-y: auto; background: #111; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
-.chat-input { display: flex; gap: 5px; }
-.input { flex: 1; padding: 6px; border-radius: 4px; border: none; }
-.footer { text-align: center; margin-top: 20px; color: #888; }
-.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; }
+body { margin:0; font-family:'Poppins',sans-serif; background:#111; color:#fff; }
+.container { max-width:1200px; margin:auto; padding:10px; }
+.app-header { text-align:center; padding:20px; font-size:2em; font-weight:700; }
+.card { background:#222; border-radius:12px; padding:15px; margin:10px 0; }
+.btn { padding:8px 16px; margin:5px; border:none; border-radius:6px; cursor:pointer; }
+.neon { background:#0ff; color:#000; font-weight:600; }
+.ghost { background:transparent; border:2px solid #0ff; color:#0ff; }
+.video-stage { position:relative; width:100%; height:300px; background:#000; }
+.local-thumb { position:absolute; bottom:10px; right:10px; width:120px; height:90px; }
+.local-thumb video { width:100%; height:100%; object-fit:cover; }
+.chat-box { height:300px; overflow-y:auto; background:#111; padding:10px; border-radius:6px; margin-bottom:10px; }
+.chat-input { display:flex; gap:5px; }
+.input { flex:1; padding:6px; border-radius:4px; border:none; }
+.footer { text-align:center; margin-top:20px; color:#888; }
+.modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; }
 .modal .panel { background:#222; padding:20px; border-radius:12px; text-align:center; }
 </style>
-
 </head>
 <body>
+
 <div class="container">
   <header class="app-header">Pogadaj24</header>
-
   <div class="ad-top card">Miejsce na górną reklamę</div>
 
   <main style="display:flex;gap:18px;flex-wrap:wrap;justify-content:center;">
@@ -75,7 +67,6 @@ body {
 </div>
 
 <script>
-/* ---- JS ---- */
 const WEBSOCKET_URL = 'wss://pogadaj24.onrender.com';
 
 const localVideo = document.getElementById('local');
@@ -96,6 +87,7 @@ let pc = null;
 let ws = null;
 let isMuted = false;
 
+// Dodanie wiadomości do czatu
 function addChat(who, msg) {
   const el = document.createElement('div');
   el.innerHTML = `<strong>${who}:</strong> ${msg}`;
@@ -103,70 +95,86 @@ function addChat(who, msg) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Start kamery
 async function startCamera() {
   try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localStream = await navigator.mediaDevices.getUserMedia({ video:true,audio:true });
     localVideo.srcObject = localStream;
-  } catch (e) {
-    addChat('System', 'Brak dostępu do kamery');
+  } catch(e) {
+    addChat('System','Brak dostępu do kamery');
   }
 }
 
+// PeerConnection
+function createPeerConnection() {
+  pc = new RTCPeerConnection();
+  pc.onicecandidate = e => { if(e.candidate) ws.send(JSON.stringify({type:'ice',candidate:e.candidate})); };
+  pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; };
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+}
+
+// WebSocket
 function initWebSocket() {
   ws = new WebSocket(WEBSOCKET_URL);
+
   ws.onmessage = e => {
     const data = JSON.parse(e.data);
-    if (data.type === 'offer') {
+
+    if(data.type==='system') {
+      addChat('System',data.message);
+      if(data.message.includes('Połączono z partnerem!')) {
+        startCamera().then(()=>{ createPeerConnection(); });
+      }
+    } else if(data.type==='offer') {
       pc.setRemoteDescription(data.offer)
-        .then(() => pc.createAnswer())
-        .then(answer => pc.setLocalDescription(answer))
-        .then(() => ws.send(JSON.stringify({ type: 'answer', answer: pc.localDescription })));
-    } else if (data.type === 'answer') {
+        .then(()=>pc.createAnswer())
+        .then(answer=>pc.setLocalDescription(answer))
+        .then(()=>ws.send(JSON.stringify({type:'answer',answer:pc.localDescription})));
+    } else if(data.type==='answer') {
       pc.setRemoteDescription(data.answer);
-    } else if (data.type === 'ice') {
+    } else if(data.type==='ice') {
       pc.addIceCandidate(data.candidate);
-    } else if (data.type === 'chat') {
-      addChat('Partner', data.message);
+    } else if(data.type==='chat') {
+      addChat('Partner',data.message);
     }
   };
 }
 
-function createPeerConnection() {
-  pc = new RTCPeerConnection();
-  pc.onicecandidate = e => { if (e.candidate) ws.send(JSON.stringify({ type:'ice', candidate:e.candidate })); };
-  pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; };
-  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
-}
-
-anonBtn.onclick = loginBtn.onclick = () => {
-  loginModal.style.display = 'none';
-  startCamera().then(() => { initWebSocket(); createPeerConnection(); });
+// Obsługa logowania
+anonBtn.onclick = loginBtn.onclick = ()=> {
+  loginModal.style.display='none';
+  initWebSocket();
 };
 
-sendBtn.onclick = () => {
+// Wysyłanie wiadomości
+sendBtn.onclick = ()=>{
   const t = chatText.value.trim();
-  if (!t) return;
-  chatText.value = '';
-  addChat('Ty', t);
-  ws.send(JSON.stringify({ type: 'chat', message: t }));
+  if(!t) return;
+  chatText.value='';
+  addChat('Ty',t);
+  ws.send(JSON.stringify({type:'chat',message:t}));
 };
 
-startBtn.onclick = () => {
-  if (pc) {
+// Start/Next/Stop/Mute
+startBtn.onclick = ()=> {
+  if(pc){
     pc.createOffer()
-      .then(offer => pc.setLocalDescription(offer))
-      .then(() => ws.send(JSON.stringify({ type: 'offer', offer: pc.localDescription })));
+      .then(offer=>pc.setLocalDescription(offer))
+      .then(()=>ws.send(JSON.stringify({type:'offer',offer:pc.localDescription})));
   }
 };
-muteBtn.onclick = () => {
-  if (localStream) {
-    isMuted = !isMuted;
-    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+
+nextBtn.onclick = ()=>{ addChat('System','Przechodzisz do następnego'); };
+stopBtn.onclick = ()=>{ addChat('System','Sesja zatrzymana'); };
+muteBtn.onclick = ()=>{
+  if(localStream){
+    isMuted=!isMuted;
+    localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted);
   }
 };
-nextBtn.onclick = () => { addChat('System', 'Przechodzisz do następnego'); };
-stopBtn.onclick = () => { addChat('System', 'Sesja zatrzymana'); };
-chatText.addEventListener('keypress', e => { if (e.key==='Enter') { e.preventDefault(); sendBtn.click(); } });
+
+// Enter w polu czatu
+chatText.addEventListener('keypress', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
 </script>
 
 </body>
