@@ -3,12 +3,17 @@ const path = require('path');
 const WebSocket = require('ws');
 
 const app = express();
-// Render wymaga, aby serwer używał portu z process.env.PORT
 const PORT = process.env.PORT || 8080;
 
-// Serwowanie plików statycznych (index.html i innych)
-app.use(express.static(path.join(__dirname)));
+// Serwowanie plików statycznych z folderu public
+app.use(express.static(path.join(__dirname, 'public')));
 
+// Endpoint główny – wysyła index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Uruchomienie serwera
 const server = app.listen(PORT, () => {
   console.log(`Server działa na porcie ${PORT}`);
 });
