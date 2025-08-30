@@ -7,168 +7,332 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
-body { margin:0; font-family:'Poppins', sans-serif; background:#111; color:#fff; }
-.container { max-width:1400px; margin:auto; padding:10px; }
-.app-header { text-align:center; padding:20px; font-size:2em; font-weight:700; }
-.card { background:#222; border-radius:12px; padding:15px; margin:10px 0; }
-.btn { padding:8px 16px; margin:5px; border:none; border-radius:6px; cursor:pointer; }
-.neon { background:#0ff; color:#000; font-weight:600; }
-.ghost { background:transparent; border:2px solid #0ff; color:#0ff; }
-.video-container { display:flex; justify-content:center; align-items:flex-start; gap:20px; flex-wrap:wrap; }
-.video-stage { position:relative; width:720px; height:480px; background:#000; border-radius:12px; overflow:hidden; }
-.local-thumb { position:absolute; bottom:10px; right:10px; width:200px; height:150px; border:2px solid #0ff; border-radius:8px; }
-.local-thumb video, .video-stage video { width:100%; height:100%; object-fit:cover; }
-.action-bar { margin-top:10px; text-align:center; }
-.chat-panel { width:300px; max-height:480px; display:flex; flex-direction:column; }
-.chat-box { flex:1; overflow-y:auto; background:#111; padding:10px; border-radius:6px; margin-bottom:10px; font-size:0.9em; }
-.chat-input { display:flex; gap:5px; }
-.input { flex:1; padding:6px; border-radius:4px; border:none; }
-.footer { text-align:center; margin-top:20px; color:#888; }
-.modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; }
-.modal .panel { background:#222; padding:20px; border-radius:12px; text-align:center; }
+:root{
+  --bg:#0b0b0b; --panel:#1c1c1c; --ink:#fff; --muted:#9aa0a6; --neon:#00f5ff;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Poppins',sans-serif;background:var(--bg);color:var(--ink);}
+.container{max-width:1600px;margin:auto;padding:16px;}
+.app-header{
+  text-align:center;padding:20px 10px;margin-bottom:8px;
+}
+.app-title{
+  display:inline-block;font-size:clamp(28px,4vw,48px);font-weight:700;letter-spacing:.5px;
+  color:#e8f6ff;text-shadow:0 0 10px rgba(0,245,255,.7),0 0 20px rgba(0,245,255,.35);
+  animation:glow 2.6s ease-in-out infinite;
+}
+@keyframes glow{
+  0%,100%{text-shadow:0 0 6px rgba(0,245,255,.55),0 0 16px rgba(0,245,255,.28)}
+  50%{text-shadow:0 0 16px rgba(0,245,255,.9),0 0 36px rgba(0,245,255,.45)}
+}
+
+.grid{
+  display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start;
+}
+@media (max-width:1024px){
+  .grid{grid-template-columns:1fr}
+}
+
+.card{background:var(--panel);border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.btn{padding:10px 16px;margin:4px;border:none;border-radius:8px;cursor:pointer;font-weight:600}
+.neon{background:var(--neon);color:#001014}
+.ghost{background:transparent;border:2px solid var(--neon);color:var(--neon)}
+.btn:active{transform:translateY(1px)}
+.action-bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+
+.video-stage{
+  position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;
+  outline:1px solid rgba(255,255,255,.06);
+}
+.video-stage video{width:100%;height:100%;object-fit:cover;background:#000}
+.local-thumb{
+  position:absolute;bottom:12px;right:12px;width:min(28%,280px);aspect-ratio:4/3;border:2px solid var(--neon);
+  border-radius:10px;overflow:hidden;box-shadow:0 0 18px rgba(0,245,255,.25);
+}
+.local-thumb video{width:100%;height:100%;object-fit:cover}
+
+.chat-panel{display:flex;flex-direction:column;max-height:calc((100vw - 380px)*9/16);min-height:420px}
+@media (max-width:1024px){.chat-panel{max-height:unset}}
+
+.chat-box{
+  flex:1;overflow-y:auto;background:#121212;padding:10px;border-radius:10px;margin-bottom:10px;
+  font-size:.95em;border:1px solid rgba(255,255,255,.06)
+}
+.chat-input{display:flex;gap:6px}
+.input{flex:1;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:#0e0e0e;color:#eaeaea}
+.footer{text-align:center;margin-top:18px;color:var(--muted);font-size:.9em}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center}
+.modal .panel{background:#1b1b1b;padding:22px;border-radius:14px;text-align:center;max-width:420px}
 </style>
 </head>
 <body>
+  <div class="container">
+    <header class="app-header">
+      <div class="app-title">Pogadaj24</div>
+    </header>
 
-<div class="container">
-  <header class="app-header">Pogadaj24</header>
+    <main class="grid">
+      <section class="card">
+        <div class="video-stage">
+          <video id="remote" autoplay playsinline></video>
+          <div class="local-thumb"><video id="local" autoplay playsinline muted></video></div>
+        </div>
+        <div class="action-bar">
+          <button id="startBtn" class="btn neon">Start</button>
+          <button id="nextBtn" class="btn neon">Next</button>
+          <button id="muteBtn" class="btn neon">Mute</button>
+          <button id="stopBtn" class="btn neon">Stop</button>
+        </div>
+      </section>
 
-  <div class="video-container">
-    <div class="card">
-      <div class="video-stage">
-        <video id="remote" autoplay playsinline></video>
-        <div class="local-thumb"><video id="local" autoplay playsinline muted></video></div>
-      </div>
-      <div class="action-bar">
-        <button id="startBtn" class="btn neon">Start</button>
-        <button id="nextBtn" class="btn neon">Next</button>
-        <button id="muteBtn" class="btn neon">Mute</button>
-        <button id="stopBtn" class="btn neon">Stop</button>
-      </div>
-    </div>
+      <aside class="chat-panel card">
+        <div class="chat-box" id="chatBox"></div>
+        <div class="chat-input">
+          <input id="chatText" class="input" placeholder="Napisz wiadomość...">
+          <button id="sendBtn" class="btn neon">Wyślij</button>
+        </div>
+      </aside>
+    </main>
 
-    <div class="chat-panel card">
-      <div class="chat-box" id="chatBox"></div>
-      <div class="chat-input">
-        <input id="chatText" class="input" placeholder="Napisz wiadomość...">
-        <button id="sendBtn" class="btn neon">Wyślij</button>
-      </div>
-    </div>
+    <footer class="footer">&copy; Pogadaj24 — prototyp</footer>
   </div>
 
-  <footer class="footer">&copy; Pogadaj24 — prototyp</footer>
-</div>
-
-<div class="modal" id="loginModal">
-  <div class="panel">
-    <h2>Witaj w Pogadaj24</h2>
-    <p>Wybierz opcję aby rozpocząć:</p>
-    <button id="anonBtn" class="btn ghost" style="margin-right:6px;">Wejdź anonimowo</button>
-    <button id="loginBtn" class="btn neon">Zaloguj (demo)</button>
+  <div class="modal" id="loginModal">
+    <div class="panel">
+      <h2>Witaj w Pogadaj24</h2>
+      <p>Wciśnij „Start”, aby połączyć z rozmówcą.</p>
+      <button id="anonBtn" class="btn ghost" style="margin-right:6px;">Wejdź anonimowo</button>
+      <button id="loginBtn" class="btn neon">Zaloguj (demo)</button>
+    </div>
   </div>
-</div>
 
 <script>
+/** ====== KONFIG ====== **/
 const WEBSOCKET_URL = 'wss://pogadaj24.onrender.com';
+const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }]; // STUN dla lepszego połączenia
 
+/** ====== ELEMENTY ====== **/
 const localVideo = document.getElementById('local');
 const remoteVideo = document.getElementById('remote');
 const startBtn = document.getElementById('startBtn');
-const nextBtn = document.getElementById('nextBtn');
-const muteBtn = document.getElementById('muteBtn');
-const stopBtn = document.getElementById('stopBtn');
-const chatBox = document.getElementById('chatBox');
-const sendBtn = document.getElementById('sendBtn');
+const nextBtn  = document.getElementById('nextBtn');
+const muteBtn  = document.getElementById('muteBtn');
+const stopBtn  = document.getElementById('stopBtn');
+const chatBox  = document.getElementById('chatBox');
+const sendBtn  = document.getElementById('sendBtn');
 const chatText = document.getElementById('chatText');
 const loginModal = document.getElementById('loginModal');
 const anonBtn = document.getElementById('anonBtn');
 const loginBtn = document.getElementById('loginBtn');
 
+/** ====== STAN ====== **/
 let localStream = null;
 let pc = null;
 let ws = null;
 let isMuted = false;
+let isStarting = false;
 
+/** ====== POMOCNICZE ====== **/
 function addChat(who, msg) {
   const el = document.createElement('div');
   el.innerHTML = `<strong>${who}:</strong> ${msg}`;
   chatBox.appendChild(el);
   chatBox.scrollTop = chatBox.scrollHeight;
 }
+function log(...a){ console.log('[Pogadaj24]', ...a); }
 
-async function startCamera() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
-    localVideo.srcObject = localStream;
-  } catch (e) {
-    addChat('System', 'Brak dostępu do kamery');
-    throw e;
+/** Bezpieczne wysyłanie po WS — czeka aż WS się otworzy */
+function wsSend(obj){
+  const data = JSON.stringify(obj);
+  if(ws && ws.readyState === WebSocket.OPEN){
+    ws.send(data);
+  } else {
+    const iv = setInterval(()=>{
+      if(ws && ws.readyState === WebSocket.OPEN){
+        clearInterval(iv);
+        ws.send(data);
+      }
+    }, 100);
   }
 }
 
+/** ====== MEDIA ====== **/
+async function startCamera() {
+  log('startCamera: żądam uprawnień do kamery/mikrofonu...');
+  localStream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
+  localVideo.srcObject = localStream;
+  log('startCamera: OK, audio/video uzyskane. Tracki:', localStream.getTracks().map(t=>t.kind));
+}
+
+/** ====== PEER ====== **/
+function createPeerConnection() {
+  log('createPeerConnection');
+  pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+  pc.addEventListener('icecandidate', e=>{
+    if(e.candidate){
+      log('ICE candidate (local) -> wysyłam');
+      wsSend({ type:'ice', candidate:e.candidate });
+    } else {
+      log('ICE gathering complete');
+    }
+  });
+
+  pc.addEventListener('track', e=>{
+    log('ontrack: otrzymano strumień partnera', e.streams[0]);
+    remoteVideo.srcObject = e.streams[0];
+  });
+
+  pc.addEventListener('iceconnectionstatechange', ()=>{
+    log('iceConnectionState:', pc.iceConnectionState);
+    if(pc.iceConnectionState === 'failed'){
+      addChat('System','Problemy z połączeniem ICE — próba ponowienia...');
+      // (opcjonalnie) można tu spróbować restart ICE
+    }
+  });
+  pc.addEventListener('connectionstatechange', ()=>{
+    log('connectionState:', pc.connectionState);
+    if(pc.connectionState === 'connected'){ addChat('System','Połączono (WebRTC)'); }
+    if(pc.connectionState === 'disconnected' || pc.connectionState === 'failed'){
+      addChat('System','Połączenie osłabione/zerwane');
+    }
+  });
+  pc.addEventListener('signalingstatechange', ()=>{
+    log('signalingState:', pc.signalingState);
+  });
+  pc.addEventListener('negotiationneeded', async ()=>{
+    // Dodatkowy safety net (zazwyczaj niepotrzebne, bo robimy manualnie w startSession)
+    log('negotiationneeded: wywołane');
+  });
+
+  // Dołącz lokalne ścieżki
+  localStream.getTracks().forEach(t => {
+    pc.addTrack(t, localStream);
+  });
+}
+
+/** ====== WEBSOCKET ====== **/
 function initWebSocket() {
+  log('initWebSocket ->', WEBSOCKET_URL);
   ws = new WebSocket(WEBSOCKET_URL);
-  ws.onmessage = e => {
+
+  ws.addEventListener('open', ()=> log('WS open'));
+  ws.addEventListener('close', ()=> log('WS close'));
+  ws.addEventListener('error', (e)=> log('WS error', e));
+
+  ws.onmessage = async (e) => {
     const data = JSON.parse(e.data);
-    if(data.type==='offer') {
-      pc.setRemoteDescription(data.offer)
-        .then(()=>pc.createAnswer())
-        .then(answer=>pc.setLocalDescription(answer))
-        .then(()=>ws.send(JSON.stringify({type:'answer',answer:pc.localDescription})));
-    } else if(data.type==='answer') {
-      pc.setRemoteDescription(data.answer);
-    } else if(data.type==='ice') {
-      pc.addIceCandidate(data.candidate);
-    } else if(data.type==='chat') {
+    log('WS message:', data.type, data);
+
+    if(data.type === 'offer'){
+      if(!pc) createPeerConnection();
+      await pc.setRemoteDescription(data.offer);
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      log('Wysyłam answer');
+      wsSend({ type:'answer', answer: pc.localDescription });
+
+    } else if(data.type === 'answer'){
+      if(!pc) return;
+      await pc.setRemoteDescription(data.answer);
+
+    } else if(data.type === 'ice'){
+      try{
+        await pc.addIceCandidate(data.candidate);
+      }catch(err){
+        log('Błąd addIceCandidate', err);
+      }
+
+    } else if(data.type === 'chat'){
       addChat('Partner', data.message);
-    } else if(data.type==='system') {
+
+    } else if(data.type === 'system'){
       addChat('System', data.message);
     }
   };
 }
 
-function createPeerConnection() {
-  pc = new RTCPeerConnection();
-  pc.onicecandidate = e => { if(e.candidate) ws.send(JSON.stringify({type:'ice', candidate:e.candidate})); };
-  pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; };
-  localStream.getTracks().forEach(t=>pc.addTrack(t, localStream));
-}
-
+/** ====== SESJA ====== **/
 async function startSession() {
-  if(!localStream) await startCamera();
-  if(!ws || ws.readyState!==WebSocket.OPEN) initWebSocket();
-  if(!pc) createPeerConnection();
+  if(isStarting) return;
+  isStarting = true;
+  try{
+    if(!localStream) await startCamera();
+    if(!pc) createPeerConnection();
+    if(!ws || ws.readyState !== WebSocket.OPEN) initWebSocket();
 
-  pc.createOffer()
-    .then(offer => pc.setLocalDescription(offer))
-    .then(()=>ws.send(JSON.stringify({type:'offer', offer:pc.localDescription})));
-}
+    // Poczekaj krótko, aż WS nawiąże OPEN
+    await new Promise(res => {
+      if(ws.readyState === WebSocket.OPEN) return res();
+      const chk = setInterval(()=>{
+        if(ws.readyState === WebSocket.OPEN){ clearInterval(chk); res(); }
+      }, 50);
+      setTimeout(()=>{ clearInterval(chk); res(); }, 1200);
+    });
 
-function endSession() {
-  if(ws && ws.readyState===WebSocket.OPEN) {
-    ws.send(JSON.stringify({type:'system', message:'Partner zakończył rozmowę'}));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    log('Wysyłam offer');
+    wsSend({ type:'offer', offer: pc.localDescription });
+    addChat('System','Szukam rozmówcy...');
+
+  } catch(err){
+    log('startSession error', err);
+    addChat('System','Błąd uruchamiania sesji: ' + (err?.message || err));
+  } finally {
+    isStarting = false;
   }
-  if(pc) { pc.close(); pc=null; }
-  if(localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream=null; localVideo.srcObject=null; }
 }
 
-startBtn.onclick = startSession;
-anonBtn.onclick = loginBtn.onclick = () => { loginModal.style.display='none'; startSession(); };
+function endSession(notifyPartner=true) {
+  log('endSession');
+  if(notifyPartner && ws && ws.readyState===WebSocket.OPEN){
+    // Server przepuszcza tylko: offer/answer/ice/chat
+    wsSend({ type:'chat', message:'[SYSTEM] Partner zakończył rozmowę' });
+  }
+  if(pc){ try{ pc.close(); }catch{} pc=null; }
+  if(localStream){
+    localStream.getTracks().forEach(t=>t.stop());
+    localStream=null;
+  }
+  localVideo.srcObject=null;
+  remoteVideo.srcObject=null;
+}
+
+/** ====== UI ZDARZENIA ====== **/
+startBtn.onclick = ()=>{ loginModal.style.display='none'; startSession(); };
+anonBtn.onclick = loginBtn.onclick = ()=>{ loginModal.style.display='none'; startSession(); };
+
 sendBtn.onclick = () => {
   const t = chatText.value.trim();
   if(!t) return;
   chatText.value='';
   addChat('Ty', t);
-  ws.send(JSON.stringify({type:'chat', message:t}));
+  wsSend({ type:'chat', message:t });
 };
+chatText.addEventListener('keypress', e => {
+  if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); }
+});
+
 muteBtn.onclick = () => {
-  if(localStream) { isMuted=!isMuted; localStream.getAudioTracks().forEach(t=>t.enabled=!isMuted); }
+  if(!localStream) return;
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t=>t.enabled = !isMuted);
+  addChat('System', isMuted ? 'Mikrofon wyciszony' : 'Mikrofon włączony');
 };
-nextBtn.onclick = () => { addChat('System','Przechodzisz do następnego'); endSession(); startSession(); };
-stopBtn.onclick = () => { addChat('System','Sesja zakończona'); endSession(); };
 
-chatText.addEventListener('keypress', e => { if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
+nextBtn.onclick = async () => {
+  addChat('System','Przechodzę do następnego...');
+  endSession(true);
+  // krótka pauza na domknięcie transportów
+  setTimeout(()=> startSession(), 250);
+};
+
+stopBtn.onclick = () => {
+  addChat('System','Sesja zakończona');
+  endSession(true);
+};
 </script>
-
 </body>
 </html>
