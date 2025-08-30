@@ -3,6 +3,7 @@ const path = require('path');
 const WebSocket = require('ws');
 
 const app = express();
+// Render wymaga, aby serwer używał portu z process.env.PORT
 const PORT = process.env.PORT || 8080;
 
 // Serwowanie plików statycznych (index.html i innych)
@@ -36,7 +37,7 @@ wss.on('connection', (ws) => {
     let data;
     try { data = JSON.parse(msg); } catch (e) { return; }
 
-    if (ws.partner && ['offer', 'answer', 'ice', 'chat'].includes(data.type)) {
+    if (ws.partner && ['offer','answer','ice','chat'].includes(data.type)) {
       ws.partner.send(JSON.stringify(data));
     }
   });
