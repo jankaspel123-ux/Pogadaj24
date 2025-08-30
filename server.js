@@ -1,24 +1,28 @@
-// server.js
+const express = require('express');
+const path = require('path');
 const WebSocket = require('ws');
 
-// użyj portu przydzielonego przez hosting lub 8080 lokalnie
-const port = process.env.PORT || 8080;
+const app = express();
+const PORT = process.env.PORT || 8080;
 
-const wss = new WebSocket.Server({ port });
+// Serwowanie plików statycznych (index.html i innych)
+app.use(express.static(path.join(__dirname)));
 
-console.log(`WebSocket server działa na porcie ${port}`);
+const server = app.listen(PORT, () => {
+  console.log(`Server działa na porcie ${PORT}`);
+});
 
+// WebSocket
+const wss = new WebSocket.Server({ server });
 let waitingUser = null;
 
 wss.on('connection', (ws) => {
   ws.partner = null;
 
-  // jeśli nie ma oczekującego użytkownika, ustaw bieżącego jako oczekującego
-  if (waitingUser === null) {
+  if (!waitingUser) {
     waitingUser = ws;
     ws.send(JSON.stringify({ type: 'system', message: 'Czekanie na partnera...' }));
   } else {
-    // sparuj z oczekującym użytkownikiem
     ws.partner = waitingUser;
     waitingUser.partner = ws;
 
@@ -32,8 +36,7 @@ wss.on('connection', (ws) => {
     let data;
     try { data = JSON.parse(msg); } catch (e) { return; }
 
-    // jeśli mamy partnera, przekaż wszystkie typy: offer, answer, ice, chat
-    if (ws.partner && ['offer','answer','ice','chat'].includes(data.type)) {
+    if (ws.partner && ['offer', 'answer', 'ice', 'chat'].includes(data.type)) {
       ws.partner.send(JSON.stringify(data));
     }
   });
